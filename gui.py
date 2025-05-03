@@ -10,7 +10,7 @@ from config import (
     BOX_COLOR, SURFACE_COLOR, BACKGROUND_COLOR,
     GRAVITY_VECTOR_COLOR, NORMAL_VECTOR_COLOR,
     FRICTION_VECTOR_COLOR, APPLIED_VECTOR_COLOR,
-    INCLINE_BACKGROUND_COLOR, TRAIL_COLOR,
+    INCLINE_BACKGROUND_COLOR, TRAIL_COLOR, TRAIL_WIDTH,
     DEFAULT_FRICTION, DEFAULT_MASS, DEFAULT_FORCE, DEFAULT_ANGLE,
     DEFAULT_DISPLACEMENT, GRAVITY, VECTOR_SCALE, LABEL_OFFSET,
     PIXELS_PER_METER
@@ -63,40 +63,78 @@ class SimulationGUI:
     
     def setup_info_panel(self, parent):
         """Crea el panel de información a la derecha del lienzo."""
-        info_frame = tk.Frame(parent)
+        info_frame = tk.Frame(
+            parent, bg="gray95", relief="groove", borderwidth=2, padx=10, pady=10
+        )
         info_frame.pack(side=tk.LEFT, padx=10)
         
         # Título
-        tk.Label(info_frame, text="Información Física", font=("Arial", 12, "bold")).pack()
+        tk.Label(
+            info_frame, text="Información Física", font=("Arial", 14, "bold"),
+            bg="gray95"
+        ).pack(pady=(0, 10))
         
         # Constantes
-        tk.Label(info_frame, text="Constantes:", font=("Arial", 10, "underline")).pack(anchor="w")
-        self.gravity_label = tk.Label(info_frame, text=f"Gravedad (g): {GRAVITY} m/s²")
-        self.gravity_label.pack(anchor="w")
+        tk.Label(
+            info_frame, text="Constantes:", font=("Arial", 11, "underline"),
+            bg="gray95"
+        ).pack(anchor="w")
+        self.gravity_label = tk.Label(
+            info_frame, text=f"Gravedad (g): {GRAVITY} m/s²", bg="gray95"
+        )
+        self.gravity_label.pack(anchor="w", pady=2)
         
         # Fuerzas
-        tk.Label(info_frame, text="Fuerzas:", font=("Arial", 10, "underline")).pack(anchor="w")
-        self.weight_label = tk.Label(info_frame, text="Fuerza Gravitacional (F_g): - N")
-        self.weight_label.pack(anchor="w")
-        self.normal_label = tk.Label(info_frame, text="Fuerza Normal (F_n): - N")
-        self.normal_label.pack(anchor="w")
-        self.friction_label = tk.Label(info_frame, text="Fuerza de Fricción (F_f): - N")
-        self.friction_label.pack(anchor="w")
-        self.applied_label = tk.Label(info_frame, text="Fuerza Aplicada (F_a): - N")
-        self.applied_label.pack(anchor="w")
-        self.net_force_label = tk.Label(info_frame, text="Fuerza Neta (F_net): - N")
-        self.net_force_label.pack(anchor="w")
+        tk.Label(
+            info_frame, text="Fuerzas:", font=("Arial", 11, "underline"),
+            bg="gray95"
+        ).pack(anchor="w", pady=(10, 0))
+        self.weight_label = tk.Label(
+            info_frame, text="Fuerza Gravitacional (F_g): - N",
+            fg=GRAVITY_VECTOR_COLOR, bg="gray95"
+        )
+        self.weight_label.pack(anchor="w", pady=2)
+        self.normal_label = tk.Label(
+            info_frame, text="Fuerza Normal (F_n): - N",
+            fg=NORMAL_VECTOR_COLOR, bg="gray95"
+        )
+        self.normal_label.pack(anchor="w", pady=2)
+        self.friction_label = tk.Label(
+            info_frame, text="Fuerza de Fricción (F_f): - N",
+            fg=FRICTION_VECTOR_COLOR, bg="gray95"
+        )
+        self.friction_label.pack(anchor="w", pady=2)
+        self.applied_label = tk.Label(
+            info_frame, text="Fuerza Aplicada (F_a): - N",
+            fg=APPLIED_VECTOR_COLOR, bg="gray95"
+        )
+        self.applied_label.pack(anchor="w", pady=2)
+        self.net_force_label = tk.Label(
+            info_frame, text="Fuerza Neta (F_net): - N", bg="gray95"
+        )
+        self.net_force_label.pack(anchor="w", pady=2)
         
         # Variables
-        tk.Label(info_frame, text="Variables:", font=("Arial", 10, "underline")).pack(anchor="w")
-        self.acceleration_info_label = tk.Label(info_frame, text="Aceleración: - m/s²")
-        self.acceleration_info_label.pack(anchor="w")
-        self.work_info_label = tk.Label(info_frame, text="Trabajo: - J")
-        self.work_info_label.pack(anchor="w")
-        self.displacement_info_label = tk.Label(info_frame, text="Desplazamiento: - m")
-        self.displacement_info_label.pack(anchor="w")
-        self.time_info_label = tk.Label(info_frame, text="Tiempo: - s")
-        self.time_info_label.pack(anchor="w")
+        tk.Label(
+            info_frame, text="Variables:", font=("Arial", 11, "underline"),
+            bg="gray95"
+        ).pack(anchor="w", pady=(10, 0))
+        self.acceleration_info_label = tk.Label(
+            info_frame, text="Aceleración: - m/s²", bg="gray95"
+        )
+        self.acceleration_info_label.pack(anchor="w", pady=2)
+        self.work_info_label = tk.Label(
+            info_frame, text="Trabajo: - J", bg="gray95"
+        )
+        self.work_info_label.pack(anchor="w", pady=2)
+        self.displacement_info_label = tk.Label(
+            info_frame, text="Desplazamiento: - m", bg="gray95"
+        )
+        self.displacement_info_label.pack(anchor="w", pady=2)
+        self.time_info_label = tk.Label(
+            info_frame, text="Tiempo: - s", bg="gray95"
+        )
+        self.time_info_label.pack(anchor="w", pady=2)
     
     def draw_initial_scene(self):
         """Dibuja la escena inicial: superficie inclinada, fondo gris, caja y trayectoria."""
@@ -135,14 +173,16 @@ class SimulationGUI:
         box_top_y = box_y_surface - BOX_SIZE
         box_bottom_y = box_y_surface
         
-        # Dibujar trayectoria
+        # Dibujar trayectoria (desde el centro de la base de la caja)
         if self.trail_points:
             for i in range(len(self.trail_points) - 1):
                 x1, y1 = self.trail_points[i]
                 x2, y2 = self.trail_points[i + 1]
-                self.canvas.create_line(x1, y1, x2, y2, fill=TRAIL_COLOR, width=2)
+                self.canvas.create_line(
+                    x1, y1, x2, y2, fill=TRAIL_COLOR, width=TRAIL_WIDTH
+                )
         
-        # Actualizar puntos de la trayectoria
+        # Actualizar puntos de la trayectoria (centro de la base)
         trail_x = box_x + BOX_SIZE / 2
         trail_y = box_y_surface
         if not self.trail_points or self.trail_points[-1] != (trail_x, trail_y):
