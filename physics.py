@@ -10,12 +10,12 @@ class PhysicsCalculator:
         
         Args:
             mass (float): Masa de la caja en kg.
-            friction_coeff (float): Coeficiente de fricción.
+            friction_coeff (float): Coeficiente de fricción (estático y cinético).
             applied_force (float): Fuerza aplicada en N.
             angle_deg (float): Ángulo de inclinación en grados.
         """
         self.mass = mass
-        self.friction_coeff = friction_coeff
+        self.friction_coeff = friction_coeff  # Usado para fricción estática y cinética
         self.applied_force = applied_force
         self.angle_rad = math.radians(angle_deg)
         self.gravity = 9.81  # Aceleración gravitacional en m/s²
@@ -25,6 +25,7 @@ class PhysicsCalculator:
         self.position = 0.0  # Posición inicial en metros (relativa al inicio)
         self.time = 0.0  # Tiempo acumulado en segundos
         self.displacement = 0.0  # Desplazamiento acumulado en metros
+        self.is_moving = False  # Indica si la caja está en movimiento
     
     def calculate_forces(self):
         """Calcula las fuerzas actuando sobre la caja.
@@ -42,11 +43,34 @@ class PhysicsCalculator:
         # Fuerza normal (igual a la componente perpendicular en este caso)
         normal_force = weight_normal
         
-        # Fuerza de fricción (opuesta a la dirección del movimiento)
-        friction_force = self.friction_coeff * normal_force
+        # Fuerza de fricción estática máxima
+        friction_static_max = self.friction_coeff * normal_force
         
-        # Fuerza neta (considerando fuerza aplicada y fricción)
-        net_force = self.applied_force - friction_force - weight_parallel
+        # Fuerza resultante sin fricción (fuerza aplicada + componente gravitacional)
+        force_without_friction = self.applied_force - weight_parallel
+        
+        # Determinar si la caja se mueve (fricción estática vs. cinética)
+        if abs(force_without_friction) > friction_static_max:
+            self.is_moving = True
+        elif abs(self.velocity) < 0.01:  # Si la velocidad es muy baja, detener
+            self.is_moving = False
+        
+        # Calcular fuerza de fricción
+        if self.is_moving:
+            # Fricción cinética (en dirección opuesta al movimiento)
+            friction_force = self.friction_coeff * normal_force
+            if force_without_friction > 0:
+                friction_force = -friction_force  # Opuesta a la dirección positiva
+            elif force_without_friction < 0:
+                friction_force = abs(friction_force)  # Opuesta a la dirección negativa
+        else:
+            # Fricción estática (ajusta para mantener la caja en reposo)
+            friction_force = -force_without_friction
+            if abs(friction_force) > friction_static_max:
+                friction_force = friction_static_max if force_without_friction < 0 else -friction_static_max
+        
+        # Fuerza neta
+        net_force = self.applied_force - weight_parallel + friction_force
         
         return {
             "weight": weight,
@@ -109,6 +133,12 @@ class PhysicsCalculator:
         if pixel_position >= CANVAS_LIMIT:
             self.velocity = 0  # Detener movimiento
             self.position = CANVAS_LIMIT / PIXELS_PER_METER
+            self.is_moving = False
+            return False
+        elif pixel_position <= 0:
+            self.velocity = 0  # Detener movimiento
+            self.position = 0
+            self.is_moving = False
             return False
         return True
     
@@ -155,3 +185,4 @@ class PhysicsCalculator:
         self.position = 0.0
         self.time = 0.0
         self.displacement = 0.0
+        self.is_moving = False
