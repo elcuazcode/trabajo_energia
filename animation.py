@@ -33,7 +33,12 @@ class AnimationManager:
         
         # Actualizar posición (delta_time en segundos)
         delta_time = FRAME_TIME / 1000.0
-        can_move = self.physics.update_position(delta_time)
+        try:
+            can_move = self.physics.update_position(delta_time)
+        except ValueError as e:
+            self.gui.show_error(str(e))
+            self.pause()
+            return
         
         # Actualizar GUI
         self.gui.update_simulation(self.physics)

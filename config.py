@@ -20,8 +20,10 @@ NORMAL_VECTOR_COLOR = "purple"  # Color del vector normal
 FRICTION_VECTOR_COLOR = "orange"  # Color del vector de fricción
 APPLIED_VECTOR_COLOR = "red"  # Color del vector de fuerza aplicada
 INCLINE_BACKGROUND_COLOR = "gray80"  # Color del fondo bajo la superficie inclinada
-TRAIL_COLOR = "magenta"  # Color de la trayectoria de la caja (cambiado a magenta)
+TRAIL_COLOR = "magenta"  # Color de la trayectoria de la caja
 TRAIL_WIDTH = 4  # Grosor de la línea de trayectoria en píxeles
+TRAIL_MARKER_COLOR = "black"  # Color del marcador en el inicio de la trayectoria
+TRAIL_MARKER_SIZE = 5  # Tamaño del marcador en píxeles (radio)
 
 # Valores predeterminados de parámetros físicos
 DEFAULT_FRICTION = 0.3  # Coeficiente de fricción inicial

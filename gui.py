@@ -11,6 +11,7 @@ from config import (
     GRAVITY_VECTOR_COLOR, NORMAL_VECTOR_COLOR,
     FRICTION_VECTOR_COLOR, APPLIED_VECTOR_COLOR,
     INCLINE_BACKGROUND_COLOR, TRAIL_COLOR, TRAIL_WIDTH,
+    TRAIL_MARKER_COLOR, TRAIL_MARKER_SIZE,
     DEFAULT_FRICTION, DEFAULT_MASS, DEFAULT_FORCE, DEFAULT_ANGLE,
     DEFAULT_DISPLACEMENT, GRAVITY, VECTOR_SCALE, LABEL_OFFSET,
     PIXELS_PER_METER
@@ -34,6 +35,7 @@ class SimulationGUI:
         self.angle_deg = DEFAULT_ANGLE
         self.initial_box_x = 50  # Posición inicial de la caja en píxeles
         self.trail_points = []  # Puntos para la trayectoria
+        self.trail_start = None  # Posición inicial de la trayectoria
         
         # Crear frame principal para organizar lienzo y panel de información
         main_frame = tk.Frame(self.root)
@@ -64,7 +66,7 @@ class SimulationGUI:
     def setup_info_panel(self, parent):
         """Crea el panel de información a la derecha del lienzo."""
         info_frame = tk.Frame(
-            parent, bg="gray95", relief="groove", borderwidth=2, padx=10, pady=10
+            parent, bg="gray95", relief="groove", borderwidth=2, padx=8, pady=8
         )
         info_frame.pack(side=tk.LEFT, padx=10)
         
@@ -72,7 +74,7 @@ class SimulationGUI:
         tk.Label(
             info_frame, text="Información Física", font=("Arial", 14, "bold"),
             bg="gray95"
-        ).pack(pady=(0, 10))
+        ).pack(pady=(0, 5))
         
         # Constantes
         tk.Label(
@@ -82,62 +84,66 @@ class SimulationGUI:
         self.gravity_label = tk.Label(
             info_frame, text=f"Gravedad (g): {GRAVITY} m/s²", bg="gray95"
         )
-        self.gravity_label.pack(anchor="w", pady=2)
+        self.gravity_label.pack(anchor="w", pady=1)
         
         # Fuerzas
         tk.Label(
             info_frame, text="Fuerzas:", font=("Arial", 11, "underline"),
             bg="gray95"
-        ).pack(anchor="w", pady=(10, 0))
+        ).pack(anchor="w", pady=(5, 0))
         self.weight_label = tk.Label(
             info_frame, text="Fuerza Gravitacional (F_g): - N",
             fg=GRAVITY_VECTOR_COLOR, bg="gray95"
         )
-        self.weight_label.pack(anchor="w", pady=2)
+        self.weight_label.pack(anchor="w", pady=1)
         self.normal_label = tk.Label(
             info_frame, text="Fuerza Normal (F_n): - N",
             fg=NORMAL_VECTOR_COLOR, bg="gray95"
         )
-        self.normal_label.pack(anchor="w", pady=2)
+        self.normal_label.pack(anchor="w", pady=1)
         self.friction_label = tk.Label(
             info_frame, text="Fuerza de Fricción (F_f): - N",
             fg=FRICTION_VECTOR_COLOR, bg="gray95"
         )
-        self.friction_label.pack(anchor="w", pady=2)
+        self.friction_label.pack(anchor="w", pady=1)
         self.applied_label = tk.Label(
             info_frame, text="Fuerza Aplicada (F_a): - N",
             fg=APPLIED_VECTOR_COLOR, bg="gray95"
         )
-        self.applied_label.pack(anchor="w", pady=2)
+        self.applied_label.pack(anchor="w", pady=1)
         self.net_force_label = tk.Label(
             info_frame, text="Fuerza Neta (F_net): - N", bg="gray95"
         )
-        self.net_force_label.pack(anchor="w", pady=2)
+        self.net_force_label.pack(anchor="w", pady=1)
         
         # Variables
         tk.Label(
             info_frame, text="Variables:", font=("Arial", 11, "underline"),
             bg="gray95"
-        ).pack(anchor="w", pady=(10, 0))
+        ).pack(anchor="w", pady=(5, 0))
         self.acceleration_info_label = tk.Label(
             info_frame, text="Aceleración: - m/s²", bg="gray95"
         )
-        self.acceleration_info_label.pack(anchor="w", pady=2)
+        self.acceleration_info_label.pack(anchor="w", pady=1)
+        self.velocity_info_label = tk.Label(
+            info_frame, text="Velocidad: - m/s", bg="gray95"
+        )
+        self.velocity_info_label.pack(anchor="w", pady=1)
         self.work_info_label = tk.Label(
             info_frame, text="Trabajo: - J", bg="gray95"
         )
-        self.work_info_label.pack(anchor="w", pady=2)
+        self.work_info_label.pack(anchor="w", pady=1)
         self.displacement_info_label = tk.Label(
             info_frame, text="Desplazamiento: - m", bg="gray95"
         )
-        self.displacement_info_label.pack(anchor="w", pady=2)
+        self.displacement_info_label.pack(anchor="w", pady=1)
         self.time_info_label = tk.Label(
             info_frame, text="Tiempo: - s", bg="gray95"
         )
-        self.time_info_label.pack(anchor="w", pady=2)
+        self.time_info_label.pack(anchor="w", pady=1)
     
     def draw_initial_scene(self):
-        """Dibuja la escena inicial: superficie inclinada, fondo gris, caja y trayectoria."""
+        """Dibuja la escena inicial: superficie inclinada, fondo gris, caja, trayectoria y marcador."""
         self.canvas.delete("all")  # Limpiar lienzo
         
         # Calcular coordenadas de la superficie inclinada
@@ -173,6 +179,19 @@ class SimulationGUI:
         box_top_y = box_y_surface - BOX_SIZE
         box_bottom_y = box_y_surface
         
+        # Guardar posición inicial de la trayectoria si no está definida
+        if not self.trail_start:
+            self.trail_start = (self.initial_box_x + BOX_SIZE / 2, box_y_surface)
+        
+        # Dibujar marcador en el inicio de la trayectoria
+        if self.trail_start:
+            marker_x, marker_y = self.trail_start
+            self.canvas.create_oval(
+                marker_x - TRAIL_MARKER_SIZE, marker_y - TRAIL_MARKER_SIZE,
+                marker_x + TRAIL_MARKER_SIZE, marker_y + TRAIL_MARKER_SIZE,
+                fill=TRAIL_MARKER_COLOR
+            )
+        
         # Dibujar trayectoria (desde el centro de la base de la caja)
         if self.trail_points:
             for i in range(len(self.trail_points) - 1):
@@ -203,7 +222,7 @@ class SimulationGUI:
         tk.Label(controls_frame, text="Coef. Fricción (μ):").grid(row=0, column=0, padx=5)
         self.friction_scale = tk.Scale(
             controls_frame, from_=0.0, to=1.0, resolution=0.01,
-            orient=tk.HORIZONTAL, length=200
+            orient=tk.HORIZONTAL, length=200, command=self.update_friction
         )
         self.friction_scale.set(DEFAULT_FRICTION)
         self.friction_scale.grid(row=0, column=1, padx=5)
@@ -218,6 +237,7 @@ class SimulationGUI:
         tk.Label(controls_frame, text="Fuerza Aplicada (N):").grid(row=2, column=0, padx=5)
         self.force_entry = tk.Entry(controls_frame, width=10)
         self.force_entry.insert(0, str(DEFAULT_FORCE))
+        self.force_entry.bind("<Return>", self.update_force)
         self.force_entry.grid(row=2, column=1, padx=5)
         
         # Ángulo de inclinación
@@ -229,6 +249,39 @@ class SimulationGUI:
         self.angle_scale.set(DEFAULT_ANGLE)
         self.angle_scale.grid(row=3, column=1, padx=5)
     
+    def update_friction(self, value):
+        """Actualiza el coeficiente de fricción dinámicamente.
+        
+        Args:
+            value (str): Valor del coeficiente de fricción.
+        """
+        if self.physics:
+            friction_coeff = float(value)
+            self.physics.update_parameters(
+                friction_coeff,
+                self.physics.applied_force,
+                math.degrees(self.physics.angle_rad)
+            )
+    
+    def update_force(self, event=None):
+        """Actualiza la fuerza aplicada dinámicamente."""
+        if self.physics:
+            try:
+                applied_force = float(self.force_entry.get())
+                if applied_force < 0:
+                    raise ValueError("La fuerza aplicada no puede ser negativa")
+                self.physics.update_parameters(
+                    self.friction_scale.get(),
+                    applied_force,
+                    math.degrees(self.physics.angle_rad)
+                )
+            except ValueError as e:
+                self.show_error(str(e))
+                if self.animation:
+                    self.animation.pause()
+                self.force_entry.delete(0, tk.END)
+                self.force_entry.insert(0, str(self.physics.applied_force))
+    
     def update_angle(self, value):
         """Actualiza el ángulo y redibuja la escena.
         
@@ -236,6 +289,12 @@ class SimulationGUI:
             value (str): Valor del ángulo desde el deslizante.
         """
         self.angle_deg = float(value)
+        if self.physics:
+            self.physics.update_parameters(
+                self.friction_scale.get(),
+                self.physics.applied_force,
+                self.angle_deg
+            )
         self.draw_initial_scene()
         if self.physics:
             self.draw_force_vectors(self.physics.calculate_forces())
@@ -258,6 +317,9 @@ class SimulationGUI:
         
         self.time_label = tk.Label(results_frame, text="Tiempo (s): -")
         self.time_label.pack()
+        
+        self.status_label = tk.Label(results_frame, text="Estado: En Reposo")
+        self.status_label.pack()
     
     def setup_buttons(self):
         """Crea los botones de control."""
@@ -312,12 +374,14 @@ class SimulationGUI:
             self.acceleration_label.config(text=f"Aceleración (m/s²): {acceleration:.2f}")
             self.displacement_label.config(text=f"Desplazamiento (m): {DEFAULT_DISPLACEMENT}")
             self.time_label.config(text="Tiempo (s): 0.00")
+            self.status_label.config(text="Estado: En Reposo")
             
             # Actualizar panel de información
-            self.update_info_panel(forces, acceleration, work, DEFAULT_DISPLACEMENT, 0.0)
+            self.update_info_panel(forces, acceleration, 0.0, work, DEFAULT_DISPLACEMENT, 0.0)
             
             # Redibujar escena
             self.trail_points = []  # Reiniciar trayectoria
+            self.trail_start = None
             self.draw_initial_scene()
             
             # Dibujar vectores de fuerza
@@ -326,8 +390,11 @@ class SimulationGUI:
             # Inicializar animación
             self.animation = AnimationManager(self, self.physics)
             
+            # Deshabilitar el campo de masa
+            self.mass_entry.config(state="disabled")
+            
         except ValueError as e:
-            messagebox.showerror("Error", str(e))
+            self.show_error(str(e))
     
     def start_animation(self):
         """Inicia la animación del movimiento de la caja."""
@@ -345,20 +412,34 @@ class SimulationGUI:
             self.physics.reset()
         self.initial_box_x = 50
         self.trail_points = []
+        self.trail_start = None
         self.draw_initial_scene()
         self.work_label.config(text="Trabajo (J): -")
         self.acceleration_label.config(text="Aceleración (m/s²): -")
         self.displacement_label.config(text=f"Desplazamiento (m): {DEFAULT_DISPLACEMENT}")
         self.time_label.config(text="Tiempo (s): 0.00")
+        self.status_label.config(text="Estado: En Reposo")
         self.canvas.delete("vector")
         self.canvas.delete("label")
-        self.update_info_panel({}, 0.0, 0.0, DEFAULT_DISPLACEMENT, 0.0)
+        self.update_info_panel({}, 0.0, 0.0, DEFAULT_DISPLACEMENT, 0.0, 0.0)  # Añadido el argumento 'time'
+        if self.animation:
+            self.animation.pause()
+        # Habilitar el campo de masa al reiniciar
+        self.mass_entry.config(state="normal")
     
     def stop_and_reset(self):
         """Detiene la animación y reinicia la simulación."""
         if self.animation:
             self.animation.pause()
         self.reset_simulation()
+    
+    def show_error(self, message):
+        """Muestra un mensaje de error.
+        
+        Args:
+            message (str): Mensaje de error a mostrar.
+        """
+        messagebox.showerror("Error", message)
     
     def update_simulation(self, physics):
         """Actualiza la simulación durante la animación.
@@ -372,6 +453,7 @@ class SimulationGUI:
         # Calcular fuerzas y aceleración
         forces = physics.calculate_forces()
         acceleration = physics.calculate_acceleration()
+        velocity = physics.get_velocity()
         
         # Calcular trabajo dinámico (usando desplazamiento acumulado)
         work = physics.calculate_work(physics.displacement)
@@ -382,24 +464,33 @@ class SimulationGUI:
         self.displacement_label.config(text=f"Desplazamiento (m): {physics.displacement:.2f}")
         self.time_label.config(text=f"Tiempo (s): {physics.time:.2f}")
         
+        # Actualizar estado
+        if abs(velocity) < 0.01:
+            self.status_label.config(text="Estado: En Reposo")
+        elif velocity > 0:
+            self.status_label.config(text="Estado: Moviendo a la Derecha")
+        else:
+            self.status_label.config(text="Estado: Moviendo a la Izquierda")
+        
         # Actualizar panel de información
-        self.update_info_panel(forces, acceleration, work, physics.displacement, physics.time)
+        self.update_info_panel(forces, acceleration, velocity, work, physics.displacement, physics.time)
         
         # Redibujar vectores
         self.draw_force_vectors(forces)
     
-    def update_info_panel(self, forces, acceleration, work, displacement, time):
+    def update_info_panel(self, forces, acceleration, velocity, work, displacement, time):
         """Actualiza el panel de información con los valores actuales.
         
         Args:
             forces (dict): Diccionario con fuerzas calculadas.
             acceleration (float): Aceleración en m/s².
+            velocity (float): Velocidad en m/s.
             work (float): Trabajo en Joules.
             displacement (float): Desplazamiento en metros.
             time (float): Tiempo en segundos.
         """
         # Actualizar fuerzas
-        self.weight_label.config(text=f"Fuerza Gravitacional (F_g): {forces.get('weight', 0.0):.2f} N")
+        self.weight_label.config(text=f"Fuerza Gravitacional (F PROM_g): {forces.get('weight', 0.0):.2f} N")
         self.normal_label.config(text=f"Fuerza Normal (F_n): {forces.get('normal', 0.0):.2f} N")
         self.friction_label.config(text=f"Fuerza de Fricción (F_f): {forces.get('friction', 0.0):.2f} N")
         self.applied_label.config(text=f"Fuerza Aplicada (F_a): {forces.get('applied', 0.0):.2f} N")
@@ -407,6 +498,7 @@ class SimulationGUI:
         
         # Actualizar variables
         self.acceleration_info_label.config(text=f"Aceleración: {acceleration:.2f} m/s²")
+        self.velocity_info_label.config(text=f"Velocidad: {velocity:.2f} m/s")
         self.work_info_label.config(text=f"Trabajo: {work:.2f} J")
         self.displacement_info_label.config(text=f"Desplazamiento: {displacement:.2f} m")
         self.time_info_label.config(text=f"Tiempo: {time:.2f} s")

@@ -27,6 +27,18 @@ class PhysicsCalculator:
         self.displacement = 0.0  # Desplazamiento acumulado en metros
         self.is_moving = False  # Indica si la caja está en movimiento
     
+    def update_parameters(self, friction_coeff, applied_force, angle_deg):
+        """Actualiza los parámetros dinámicamente durante la animación.
+        
+        Args:
+            friction_coeff (float): Nuevo coeficiente de fricción.
+            applied_force (float): Nueva fuerza aplicada.
+            angle_deg (float): Nuevo ángulo de inclinación.
+        """
+        self.friction_coeff = friction_coeff
+        self.applied_force = applied_force
+        self.angle_rad = math.radians(angle_deg)
+    
     def calculate_forces(self):
         """Calcula las fuerzas actuando sobre la caja.
         
@@ -135,11 +147,8 @@ class PhysicsCalculator:
             self.position = CANVAS_LIMIT / PIXELS_PER_METER
             self.is_moving = False
             return False
-        elif pixel_position <= 0:
-            self.velocity = 0  # Detener movimiento
-            self.position = 0
-            self.is_moving = False
-            return False
+        # Permitir movimiento hacia atrás (posición negativa)
+        # No detener en posición 0, dejar que la caja se mueva libremente
         return True
     
     def get_vector_coordinates(self, force_type, magnitude, start_x, start_y):
@@ -178,6 +187,14 @@ class PhysicsCalculator:
             end_x, end_y = start_x, start_y
         
         return end_x, end_y
+    
+    def get_velocity(self):
+        """Devuelve la velocidad actual de la caja.
+        
+        Returns:
+            float: Velocidad en m/s.
+        """
+        return self.velocity
     
     def reset(self):
         """Reinicia las variables de animación."""
